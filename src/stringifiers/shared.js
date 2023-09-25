@@ -152,9 +152,13 @@ FROM (
 export function orderingsToString(orderings, q, as) {
   const orderByClauses = []
   for (const ordering of orderings) {
-    orderByClauses.push(
-      `${as ? q(as) + '.' : ''}${q(ordering.column)} ${ordering.direction}`
-    )
+    if (ordering.sqlExpr) {
+      orderByClauses.push(`${ordering.sqlExpr(q(as))} ${ordering.direction}`)
+    } else {
+      orderByClauses.push(
+        `${as ? q(as) + '.' : ''}${q(ordering.column)} ${ordering.direction}`
+      )
+    }
   }
   return orderByClauses.join(', ')
 }
