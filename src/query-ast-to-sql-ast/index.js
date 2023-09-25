@@ -937,6 +937,7 @@ export function handleOrderBy(orderBy) {
       )
       orderings.push({
         column: ordering.column,
+        sqlExpr: ordering.sqlExpr,
         direction: validateAndNormalizeDirection(ordering.direction)
       })
     }
