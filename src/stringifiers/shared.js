@@ -151,6 +151,7 @@ FROM (
 
 export function orderingsToString(orderings, q, as) {
   const orderByClauses = []
+  console.log('orderingsToString', orderings, q, as)
   for (const ordering of orderings) {
     if (ordering.sqlExpr) {
       orderByClauses.push(`${ordering.sqlExpr(q(as))} ${ordering.direction}`)
