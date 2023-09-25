@@ -7,13 +7,13 @@ import idx from 'idx'
 export function joinPrefix(prefix) {
   return prefix
     .slice(1)
-    .map(name => name + '__')
+    .map((name) => name + '__')
     .join('')
 }
 
 export function generateCastExpressionFromValueType(key, val) {
   const castTypes = {
-    string: 'TEXT'
+    string: 'TEXT',
   }
   const type = castTypes[typeof val] || null
 
@@ -28,7 +28,7 @@ function doubleQuote(str) {
 }
 
 export function thisIsNotTheEndOfThisBatch(node, parent) {
-  return (!node.sqlBatch && !idx(node, _ => _.junction.sqlBatch)) || !parent
+  return (!node.sqlBatch && !idx(node, (_) => _.junction.sqlBatch)) || !parent
 }
 
 export function whereConditionIsntSupposedToGoInsideSubqueryOrOnNextBatch(
@@ -37,7 +37,7 @@ export function whereConditionIsntSupposedToGoInsideSubqueryOrOnNextBatch(
 ) {
   return (
     !node.paginate &&
-    (!(node.sqlBatch || idx(node, _ => _.junction.sqlBatch)) || !parent)
+    (!(node.sqlBatch || idx(node, (_) => _.junction.sqlBatch)) || !parent)
   )
 }
 
@@ -152,9 +152,13 @@ FROM (
 export function orderingsToString(orderings, q, as) {
   const orderByClauses = []
   for (const ordering of orderings) {
-    orderByClauses.push(
-      `${as ? q(as) + '.' : ''}${q(ordering.column)} ${ordering.direction}`
-    )
+    if (ordering.expr) {
+      orderByClauses.push(`${q(ordering.expr)} ${ordering.direction}`)
+    } else {
+      orderByClauses.push(
+        `${as ? q(as) + '.' : ''}${q(ordering.column)} ${ordering.direction}`
+      )
+    }
   }
   return orderByClauses.join(', ')
 }
@@ -162,7 +166,7 @@ export function orderingsToString(orderings, q, as) {
 // find out what the limit, offset, order by parts should be from the relay connection args if we're paginating
 export function interpretForOffsetPaging(node, dialect) {
   const { name } = dialect
-  if (idx(node, _ => _.args.last)) {
+  if (idx(node, (_) => _.args.last)) {
     throw new Error(
       'Backward pagination not supported with offsets. Consider using keyset pagination instead'
     )
@@ -180,11 +184,11 @@ export function interpretForOffsetPaging(node, dialect) {
   let limit = ['mariadb', 'mysql', 'oracle'].includes(name)
     ? '18446744073709551615'
     : 'ALL'
-  if (idx(node, _ => _.defaultPageSize)) {
+  if (idx(node, (_) => _.defaultPageSize)) {
     limit = node.defaultPageSize + 1
   }
   let offset = 0
-  if (idx(node, _ => _.args.first)) {
+  if (idx(node, (_) => _.args.first)) {
     limit = parseInt(node.args.first, 10)
     // we'll get one extra item (hence the +1). this is to determine if there is a next page or not
     if (node.paginate) {
@@ -212,19 +216,19 @@ export function interpretForKeysetPaging(node, dialect) {
 
   const order = {
     table: sortTable,
-    columns: sortKeyToOrderings(sortKey, node.args)
+    columns: sortKeyToOrderings(sortKey, node.args),
   }
-  const cursorKeys = order.columns.map(ordering => ordering.column)
+  const cursorKeys = order.columns.map((ordering) => ordering.column)
 
   let limit = ['mariadb', 'mysql', 'oracle'].includes(name)
     ? '18446744073709551615'
     : 'ALL'
   let whereCondition = ''
-  if (idx(node, _ => _.defaultPageSize)) {
+  if (idx(node, (_) => _.defaultPageSize)) {
     limit = node.defaultPageSize + 1
   }
 
-  if (idx(node, _ => _.args.first)) {
+  if (idx(node, (_) => _.args.first)) {
     limit = parseInt(node.args.first, 10) + 1
     if (node.args.after) {
       const cursorObj = cursorToObj(node.args.after)
@@ -239,7 +243,7 @@ export function interpretForKeysetPaging(node, dialect) {
     if (node.args.before) {
       throw new Error('Using "before" with "first" is nonsensical.')
     }
-  } else if (idx(node, _ => _.args.last)) {
+  } else if (idx(node, (_) => _.args.last)) {
     limit = parseInt(node.args.last, 10) + 1
     if (node.args.before) {
       const cursorObj = cursorToObj(node.args.before)
